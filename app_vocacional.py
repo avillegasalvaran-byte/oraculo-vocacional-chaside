@@ -31,7 +31,7 @@ def aplicar_estilos():
     """, unsafe_allow_html=True)
 
 # ==========================================
-# 🧠 CEREBRO (LÓGICA CHASIDE)
+# 🧠 CEREBRO (LÓGICA CHASIDE Y GARDNER)
 # ==========================================
 class CerebroProfesional:
     def __init__(self):
@@ -47,11 +47,35 @@ class CerebroProfesional:
 
     def calcular_perfil(self, puntajes):
         resultados = []
+        
+        # ⚠️ AQUÍ DEFINIMOS CUÁNTAS PREGUNTAS HAY DE CADA CATEGORÍA EN TU LISTA
+        # Si agregas más preguntas después, debes actualizar estos números
+        conteo_preguntas = {
+            "Administrativo": 3, "Social": 3, "Arte": 3, "Salud": 3, 
+            "Tecnología": 3, "Defensa": 3, "Ciencia": 3,
+            "Lógico-matemática": 0, "Lingüística": 0, "Interpersonal": 0, 
+            "Intrapersonal": 0, "Espacial": 0, "Musical": 0, "Corporal": 0
+        }
+        
         for area, datos in self.GRIMORIO.items():
-            score = sum(puntajes.get(tag, 0) for tag in datos["tags"])
-            porcentaje = min((score / 3) * 100, 100)
-            if porcentaje > 0:
-                resultados.append({"Área": area, "Afinidad (%)": round(porcentaje), "Descripción": datos["desc"]})
+            score = 0
+            total_maximo = 0
+            
+            for tag in datos["tags"]:
+                score += puntajes.get(tag, 0)
+                total_maximo += conteo_preguntas.get(tag, 0)
+            
+            # Calculamos el porcentaje dinámicamente
+            if total_maximo > 0:
+                porcentaje = (score / total_maximo) * 100
+                if porcentaje > 0:
+                    resultados.append({
+                        "Área": area,
+                        "Afinidad (%)": round(porcentaje),
+                        "Descripción": datos["desc"]
+                    })
+        
+        # Ordenamos del porcentaje más alto al más bajo
         resultados.sort(key=lambda x: x["Afinidad (%)"], reverse=True)
         return resultados
 
@@ -130,30 +154,45 @@ def main():
 
     # --- PANTALLA 2: EL TEST ---
     elif st.session_state.pantalla == "test":
-        preguntas = [
-            {"cat": "Administrativo", "q": "¿Te imaginas organizando la economía o dirigiendo un equipo de trabajo?"},
-            {"cat": "Social", "q": "¿Te ofrecerías para organizar la fiesta de graduación de tu curso?"},
-            {"cat": "Lógico-matemática", "q": "¿Te sientes súper cómodo usando matemáticas o programando?"},
-            {"cat": "Arte", "q": "¿Disfrutas expresarte a través del dibujo, la pintura o el diseño visual?"},
-            # Puedes añadir más preguntas aquí...
-        ]
-
-        pregunta_actual = preguntas[st.session_state.indice]
+        # 📚 CUESTIONARIO COMPLETO (Estructura basada en el Manual CHASIDE)
+     preguntas = [
+        # ÁREA C: Administrativas y Contables
+        {"cat": "Administrativo", "q": "1. ¿Aceptarías trabajar escribiendo artículos en la sección económica de un diario?"},
+        {"cat": "Administrativo", "q": "2. ¿Organizas tu dinero de manera que te alcance hasta el próximo cobro?"},
+        {"cat": "Administrativo", "q": "3. ¿Te gustaría ser el responsable de la gestión de una gran empresa?"},
         
-        st.progress(st.session_state.indice / len(preguntas), text=f"Pregunta {st.session_state.indice + 1} de {len(preguntas)}")
+        # ÁREA H: Humanísticas y Sociales
+        {"cat": "Social", "q": "4. ¿Te ofrecerías para organizar la despedida de soltero de uno de tus amigos?"},
+        {"cat": "Social", "q": "5. ¿Escuchas atentamente los problemas que te plantean tus amigos?"},
+        {"cat": "Social", "q": "6. ¿Te gustaría trabajar en una institución de ayuda a menores abandonados?"},
         
-        st.markdown('<div class="tarjeta">', unsafe_allow_html=True)
-        st.markdown(f'<div class="pregunta-titulo">{pregunta_actual["q"]}</div>', unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+        # ÁREA A: Artísticas
+        {"cat": "Arte", "q": "7. ¿Diseñarías el vestuario para una obra de teatro o película?"},
+        {"cat": "Arte", "q": "8. ¿Pasarías varias horas al día ensayando con un instrumento musical?"},
+        {"cat": "Arte", "q": "9. ¿Te gustaría trabajar en una galería de arte o museo?"},
         
-        col1, col2, col3 = st.columns([1, 0.1, 1]) 
-        with col1:
-            if st.button("¡Totalmente! 😎", key=f"y_{st.session_state.indice}"):
-                st.session_state.puntajes[pregunta_actual["cat"]] += 1
-                avanzar(preguntas)
-        with col3:
-            if st.button("Nah, paso 🙅‍♂️", key=f"n_{st.session_state.indice}"):
-                avanzar(preguntas)
+        # ÁREA S: Ciencias de la Salud
+        {"cat": "Salud", "q": "10. ¿Te dedicarías a socorrer a personas accidentadas o en emergencias?"},
+        {"cat": "Salud", "q": "11. ¿Estarías dispuesto a trabajar en un hospital en horarios nocturnos?"},
+        {"cat": "Salud", "q": "12. ¿Te interesaría investigar la cura de nuevas enfermedades?"},
+        
+        # ÁREA I: Ingeniería y Computación
+        {"cat": "Tecnología", "q": "13. ¿Te interesaba saber de niño cómo estaban construidos tus juguetes?"},
+        {"cat": "Tecnología", "q": "14. ¿Te gustaría diseñar programas de computación o videojuegos?"},
+        {"cat": "Tecnología", "q": "15. ¿Te atrae el funcionamiento de los motores de los autos?"},
+        
+        # ÁREA D: Defensa y Seguridad
+        {"cat": "Defensa", "q": "16. ¿Te gustaría pertenecer a un cuerpo de seguridad como la policía o el ejército?"},
+        {"cat": "Defensa", "q": "17. ¿Te sientes capaz de mantener la calma en situaciones de alto riesgo?"},
+        {"cat": "Defensa", "q": "18. ¿Te gustaría planear estrategias de rescate en desastres naturales?"},
+        
+        # ÁREA E: Ciencias Exactas y Agrarias
+        {"cat": "Ciencia", "q": "19. ¿Te atraen los misterios de la naturaleza más que la tecnología?"},
+        {"cat": "Ciencia", "q": "20. ¿Pasarías tiempo en un laboratorio analizando muestras de suelo o plantas?"},
+        {"cat": "Ciencia", "q": "21. ¿Te gustaría descubrir nuevas leyes de la física o la química?"}
+        
+        # NOTA: Puedes seguir agregando las 98 preguntas siguiendo este mismo formato.
+    ]
 
     # --- PANTALLA 3: RESULTADOS Y CORREO ---
     elif st.session_state.pantalla == "resultados":
