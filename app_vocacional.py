@@ -1,216 +1,200 @@
 import streamlit as st
 import pandas as pd
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+import os
 
 # ==========================================
-# 🎨 ESTILOS CSS PERSONALIZADOS (MAGIA VISUAL)
+# 🎨 ESTILOS ITESARC (Verde, Azul y Amarillo)
 # ==========================================
 def aplicar_estilos():
     st.markdown("""
         <style>
-        /* Ocultar el menú superior y el pie de página de Streamlit */
-        #MainMenu {visibility: hidden;}
-        footer {visibility: hidden;}
-        header {visibility: hidden;}
-
-        /* Estilo para la pregunta principal (Letra grande y centrada) */
-        .pregunta-titulo {
-            font-size: 30px !important;
-            font-weight: 800 !important;
-            text-align: center;
-            color: #2c3e50;
-            margin-bottom: 20px;
-            line-height: 1.4;
-        }
-
-        /* Contenedor tipo tarjeta para la pregunta */
-        .tarjeta {
-            background-color: #f8f9fa;
-            padding: 30px;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-            margin-bottom: 30px;
-            border-top: 5px solid #6c5ce7;
-        }
+        #MainMenu {visibility: hidden;} footer {visibility: hidden;} header {visibility: hidden;}
         
-        /* Ajustar los botones nativos de Streamlit */
-        div.stButton > button {
-            width: 100%;
-            height: 70px;
-            border-radius: 15px;
-            font-size: 20px;
-            font-weight: bold;
-            transition: all 0.3s ease-in-out;
-        }
+        /* Títulos en Azul Institucional */
+        .titulo-colegio { font-size: 45px; font-weight: 900; text-align: center; color: #004d99; margin-top: 10px;}
+        
+        /* Subtítulos en Verde Institucional */
+        .subtitulo { text-align: center; color: #2e8b57; font-size: 20px; margin-bottom: 30px; font-weight: bold; }
+        
+        /* Tarjetas con borde Amarillo */
+        .tarjeta { background-color: #ffffff; padding: 30px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border-top: 6px solid #ffcc00; margin-bottom: 30px;}
+        
+        .pregunta-titulo { font-size: 26px !important; font-weight: bold !important; text-align: center; color: #004d99; }
+        
+        /* Botones personalizados */
+        div.stButton > button { width: 100%; height: 60px; border-radius: 12px; font-size: 18px; font-weight: bold; transition: 0.3s; }
+        
         </style>
     """, unsafe_allow_html=True)
 
 # ==========================================
-# 🧠 CEREBRO: LÓGICA CHASIDE & GARDNER
+# 🧠 CEREBRO (LÓGICA CHASIDE)
 # ==========================================
 class CerebroProfesional:
     def __init__(self):
-        # Taxonomía basada en tu guía oficial
         self.GRIMORIO = {
-            "C - Administrativas y Contables": {
-                "tags": ["Administrativo", "Lógico-matemática"],
-                "desc": "Organización, manejo de datos y liderazgo empresarial."
-            },
-            "H - Humanísticas y Sociales": {
-                "tags": ["Social", "Lingüística", "Interpersonal"],
-                "desc": "Comprensión humana, comunicación y ciencias sociales."
-            },
-            "A - Artísticas": {
-                "tags": ["Arte", "Espacial", "Musical", "Corporal"],
-                "desc": "Expresión creativa, diseño y sensibilidad estética."
-            },
-            "S - Ciencias de la Salud": {
-                "tags": ["Salud", "Interpersonal", "Intrapersonal"],
-                "desc": "Cuidado de la vida, empatía y ciencias biológicas."
-            },
-            "I - Ingeniería y Computación": {
-                "tags": ["Tecnología", "Lógico-matemática", "Espacial"],
-                "desc": "Diseño de sistemas, tecnología y resolución lógica."
-            },
-            "D - Defensa y Seguridad": {
-                "tags": ["Defensa", "Corporal", "Interpersonal"],
-                "desc": "Protección, estrategia y orden público."
-            },
-            "E - Ciencias Exactas y Agrarias": {
-                "tags": ["Ciencia", "Lógico-matemática", "Intrapersonal"],
-                "desc": "Investigación pura, método científico y naturaleza."
-            }
+            "C - Administrativas": {"tags": ["Administrativo", "Lógico-matemática"], "desc": "Organización, manejo de datos y liderazgo."},
+            "H - Humanísticas": {"tags": ["Social", "Lingüística", "Interpersonal"], "desc": "Comprensión humana, comunicación y ciencias sociales."},
+            "A - Artísticas": {"tags": ["Arte", "Espacial", "Musical", "Corporal"], "desc": "Expresión creativa, diseño y estética."},
+            "S - Salud": {"tags": ["Salud", "Interpersonal", "Intrapersonal"], "desc": "Cuidado de la vida, empatía y biología."},
+            "I - Ingeniería": {"tags": ["Tecnología", "Lógico-matemática", "Espacial"], "desc": "Diseño de sistemas, tecnología y lógica."},
+            "D - Defensa": {"tags": ["Defensa", "Corporal", "Interpersonal"], "desc": "Protección, estrategia y orden público."},
+            "E - Ciencias Exactas": {"tags": ["Ciencia", "Lógico-matemática", "Intrapersonal"], "desc": "Investigación, método científico y naturaleza."}
         }
 
     def calcular_perfil(self, puntajes):
         resultados = []
         for area, datos in self.GRIMORIO.items():
-            # Sumamos los puntos de las etiquetas correspondientes al área
             score = sum(puntajes.get(tag, 0) for tag in datos["tags"])
-            
-            # Calculamos el porcentaje (Ajustar el '4' según cantidad de preguntas por área)
-            porcentaje = min((score / 3) * 100, 100) # Tope en 100%
-            
+            porcentaje = min((score / 3) * 100, 100)
             if porcentaje > 0:
-                resultados.append({
-                    "Área": area,
-                    "Afinidad (%)": round(porcentaje),
-                    "Descripción": datos["desc"]
-                })
-        
-        # Ordenar de mayor a menor afinidad
+                resultados.append({"Área": area, "Afinidad (%)": round(porcentaje), "Descripción": datos["desc"]})
         resultados.sort(key=lambda x: x["Afinidad (%)"], reverse=True)
         return resultados
 
+def enviar_correo(email_destino, nombre_estudiante, resultados):
+    # --- CONFIGURACIÓN DEL EMISOR ---
+    remitente = "testvocacionalitesarc@gmail.com" # Pon aquí la nueva cuenta entre las comillas
+    password = "amsgqpggzbawsnuk"          # Pega aquí las 16 letras (sin espacios)
+
+    # Crear el mensaje
+    msg = MIMEMultipart()
+    msg['From'] = remitente
+    msg['To'] = email_destino
+    msg['Subject'] = f"🎓 Resultados Test Vocacional ITESARC - {nombre_estudiante}"
+
+    # Cuerpo del mensaje con los resultados
+    cuerpo = f"Hola {nombre_estudiante},\n\n"
+    cuerpo += "¡Felicidades por completar tu proceso de orientación vocacional en el ITESARC!\n\n"
+    cuerpo += "Tus resultados de afinidad son:\n"
+    
+    for res in resultados:
+        cuerpo += f"- {res['Área']}: {res['Afinidad (%)']}%\n"
+    
+    cuerpo += f"\nTu área principal recomendada es: {resultados[0]['Área']}\n"
+    cuerpo += "\nEste es un primer paso en tu proyecto de vida. ¡Muchos éxitos!\n"
+    cuerpo += "Departamento de Psicoorientación - ITESARC"
+    
+    msg.attach(MIMEText(cuerpo, 'plain'))
+
+    try:
+        # Conexión al servidor de Google (SMTP)
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.starttls() # Seguridad
+        server.login(remitente, password)
+        server.send_message(msg)
+        server.quit()
+        st.success(f"📩 ¡Resultados enviados con éxito a {email_destino}!")
+    except Exception as e:
+        st.error(f"Ocurrió un error al enviar el correo: {e}")
 # ==========================================
-# 🌐 INTERFAZ WEB ATRACTIVA
+# 🌐 INTERFAZ WEB (SISTEMA DE PANTALLAS)
 # ==========================================
 def main():
-    st.set_page_config(page_title="Descubre tu Vocación", page_icon="🎓", layout="centered")
-    aplicar_estilos() 
+    st.set_page_config(page_title="Orientación ITESARC", page_icon="🏫", layout="centered")
+    aplicar_estilos()
     
-    # Inicializar la memoria de la sesión
-    if 'indice' not in st.session_state:
+    if 'pantalla' not in st.session_state:
+        st.session_state.pantalla = "inicio"
         st.session_state.indice = 0
-        st.session_state.puntajes = {k: 0 for k in [
-            "Administrativo", "Social", "Arte", "Salud", "Tecnología", 
-            "Defensa", "Ciencia", "Lógico-matemática", "Lingüística", 
-            "Interpersonal", "Intrapersonal", "Espacial", "Musical", "Corporal"
-        ]}
-        st.session_state.finalizado = False
+        st.session_state.puntajes = {k: 0 for k in ["Administrativo", "Social", "Arte", "Salud", "Tecnología", "Defensa", "Ciencia", "Lógico-matemática", "Lingüística", "Interpersonal", "Intrapersonal", "Espacial", "Musical", "Corporal"]}
 
-    # 🌟 BATERÍA AMPLIADA DE PREGUNTAS (Extraídas del Manual Oficial)
-    preguntas = [
-        # --- PREGUNTAS CHASIDE (Aptitudes e Intereses) ---
-        {"cat": "Administrativo", "q": "¿Te imaginas organizando la economía o dirigiendo un equipo de trabajo?"},
-        {"cat": "Social", "q": "¿Te ofrecerías para organizar la fiesta de graduación de tu curso o una despedida?"},
-        {"cat": "Salud", "q": "¿Te dedicarías a socorrer a personas heridas o en situaciones de emergencia?"},
-        {"cat": "Tecnología", "q": "¿De pequeño desarmabas tus juguetes para ver cómo estaban construidos?"},
-        {"cat": "Ciencia", "q": "¿Te interesan más los misterios de la naturaleza que la última tecnología?"},
-        {"cat": "Arte", "q": "¿Diseñarías la campaña publicitaria de un nuevo producto?"},
-        {"cat": "Arte", "q": "¿Te gustaría hacer el proyecto arquitectónico de un complejo de edificios?"},
-        {"cat": "Ciencia", "q": "¿Te gustaría dirigir un proyecto de excavación arqueológica?"},
-        {"cat": "Defensa", "q": "¿Te atraen las actividades donde se requiere valentía, estrategia y protección a otros?"},
+    # --- PANTALLA 1: BIENVENIDA ---
+    if st.session_state.pantalla == "inicio":
         
-        # --- PREGUNTAS GARDNER (Inteligencias Múltiples) ---
-        {"cat": "Lingüística", "q": "¿Te resulta fácil decir lo que piensas durante una discusión o debate argumentativo?"},
-        {"cat": "Lógico-matemática", "q": "¿Te sientes súper cómodo usando calculadoras, matemáticas o programando computadoras?"},
-        {"cat": "Lógico-matemática", "q": "¿Puedes sumar o multiplicar mentalmente con mucha rapidez?"},
-        {"cat": "Corporal", "q": "¿Aprendes rápidamente los pasos de un baile nuevo o un deporte físico?"},
-        {"cat": "Espacial", "q": "¿Prefieres hacer un mapa que explicarle a alguien con palabras cómo tiene que llegar a un lugar?"},
-        {"cat": "Espacial", "q": "¿Siempre distingues el Norte del Sur, estés donde estés?"},
-        {"cat": "Musical", "q": "¿Sabes tocar (o antes sabías tocar) algún instrumento musical?"},
-        {"cat": "Musical", "q": "¿Sueles asociar la música directamente con tus estados de ánimo?"},
-        {"cat": "Intrapersonal", "q": "¿Si estás enojado o contento, generalmente sabes exactamente por qué es?"},
-        {"cat": "Interpersonal", "q": "¿Eres esa persona a la que todos sus amigos buscan para contarle sus problemas?"},
-        {"cat": "Interpersonal", "q": "¿Te das cuenta bastante bien de lo que las otras personas piensan de ti?"}
-    ]
+        # --- LÓGICA DEL LOGO ---
+        col_img1, col_img2, col_img3 = st.columns([1, 2, 1])
+        with col_img2:
+            # Revisa si pusiste el archivo logo.png o logo.jpg
+            if os.path.exists("logo.png"):
+                st.image("logo.png", use_container_width=True)
+            elif os.path.exists("logo.jpg"):
+                st.image("logo.jpg", use_container_width=True)
+            else:
+                st.markdown("<p style='text-align:center; color:#7f8c8d; font-size:12px;'>(Guarda tu imagen como 'logo.png' en la misma carpeta del código para que aparezca aquí)</p>", unsafe_allow_html=True)
+                
+        st.markdown("<div class='titulo-colegio'>ITESARC</div>", unsafe_allow_html=True)
+        st.markdown("<div class='subtitulo'>Departamento de Psicoorientación | Test Vocacional</div>", unsafe_allow_html=True)
+        
+        st.info("👋 **¡Hola!** Este test te ayudará a descubrir tus talentos ocultos basándose en el modelo CHASIDE y las Inteligencias Múltiples. No hay respuestas correctas ni incorrectas, solo sé honesto contigo mismo.")
+        
+        st.divider()
+        col1, col2, col3 = st.columns([1,2,1])
+        with col2:
+            if st.button("🚀 COMENZAR TEST", type="primary"):
+                st.session_state.pantalla = "test"
+                st.rerun()
 
-    # --- PANTALLA DE PREGUNTAS ---
-    if not st.session_state.finalizado:
+    # --- PANTALLA 2: EL TEST ---
+    elif st.session_state.pantalla == "test":
+        preguntas = [
+            {"cat": "Administrativo", "q": "¿Te imaginas organizando la economía o dirigiendo un equipo de trabajo?"},
+            {"cat": "Social", "q": "¿Te ofrecerías para organizar la fiesta de graduación de tu curso?"},
+            {"cat": "Lógico-matemática", "q": "¿Te sientes súper cómodo usando matemáticas o programando?"},
+            {"cat": "Arte", "q": "¿Disfrutas expresarte a través del dibujo, la pintura o el diseño visual?"},
+            # Puedes añadir más preguntas aquí...
+        ]
+
         pregunta_actual = preguntas[st.session_state.indice]
         
-        st.markdown("<h3 style='text-align: center; color: #6c5ce7;'>🚀 Explorador de Talentos</h3>", unsafe_allow_html=True)
+        st.progress(st.session_state.indice / len(preguntas), text=f"Pregunta {st.session_state.indice + 1} de {len(preguntas)}")
         
-        # Barra de progreso
-        progreso = st.session_state.indice / len(preguntas)
-        st.progress(progreso)
-        st.markdown(f"<p style='text-align: center; color: #888;'>Pregunta {st.session_state.indice + 1} de {len(preguntas)}</p>", unsafe_allow_html=True)
-        
-        # Tarjeta de la pregunta
         st.markdown('<div class="tarjeta">', unsafe_allow_html=True)
         st.markdown(f'<div class="pregunta-titulo">{pregunta_actual["q"]}</div>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
         
-        # Botones de Acción
         col1, col2, col3 = st.columns([1, 0.1, 1]) 
-        
         with col1:
-            if st.button("¡Totalmente! 😎", key=f"yes_{st.session_state.indice}"):
+            if st.button("¡Totalmente! 😎", key=f"y_{st.session_state.indice}"):
                 st.session_state.puntajes[pregunta_actual["cat"]] += 1
                 avanzar(preguntas)
-                
         with col3:
-            if st.button("Nah, paso 🙅‍♂️", key=f"no_{st.session_state.indice}"):
+            if st.button("Nah, paso 🙅‍♂️", key=f"n_{st.session_state.indice}"):
                 avanzar(preguntas)
 
-    # --- PANTALLA DE RESULTADOS ---
-    else:
-        st.balloons() # Animación de celebración
-        st.markdown("<h1 style='text-align: center; color: #27ae60;'>¡Análisis Completado! 🎉</h1>", unsafe_allow_html=True)
-        st.write("Hemos procesado tus respuestas basándonos en tu perfil CHASIDE y tus Inteligencias Múltiples.")
+    # --- PANTALLA 3: RESULTADOS Y CORREO ---
+    elif st.session_state.pantalla == "resultados":
+        st.balloons()
+        st.markdown("<h2 style='text-align: center; color: #004d99;'>¡Análisis Completado! 🎉</h2>", unsafe_allow_html=True)
         
         cerebro = CerebroProfesional()
         resultados = cerebro.calcular_perfil(st.session_state.puntajes)
         
         if resultados:
             df = pd.DataFrame(resultados)
-            
-            # Mostrar el resultado principal
             top_1 = resultados[0]
-            st.success(f"🌟 **Tu área más fuerte es:\n {top_1['Área']} ({top_1['Afinidad (%)']}%)**\n\n{top_1['Descripción']}")
+            st.success(f"🌟 **Tu área más fuerte es: {top_1['Área']} ({top_1['Afinidad (%)']}%)**")
+            st.bar_chart(df.set_index("Área")["Afinidad (%)"], color="#2e8b57") # Gráfico verde ITESARC
             
-            # Gráfico de barras
-            st.write("### Tu mapa de talentos")
-            st.bar_chart(df.set_index("Área")["Afinidad (%)"], color="#6c5ce7")
+            # --- SECCIÓN DE ENVÍO POR CORREO ---
+            st.divider()
+            st.markdown("### 📥 Recibe tu informe detallado")
+            st.write("Ingresa tus datos para enviarte el resultado completo a ti y al departamento de psicoorientación.")
             
-            # Mostrar tabla detallada
-            with st.expander("Ver detalles de todas las áreas"):
-                st.dataframe(df, use_container_width=True, hide_index=True)
-        else:
-            st.info("Necesitamos más datos para definir tu perfil. Tus intereses están muy equilibrados.")
-            
+            with st.form("formulario_correo"):
+                nombre = st.text_input("Tu Nombre Completo:")
+                correo = st.text_input("Tu Correo Electrónico:")
+                enviar = st.form_submit_button("Enviar Resultados por Correo", type="primary")
+                
+                if enviar:
+                    if nombre and "@" in correo:
+                        enviar_correo(correo, nombre, resultados)
+                    else:
+                        st.error("Por favor ingresa un nombre y un correo válido.")
+                        
         st.divider()
-        col_btn1, col_btn2, col_btn3 = st.columns([1, 2, 1])
-        with col_btn2:
-            if st.button("🔄 Hacer el test de nuevo", use_container_width=True):
-                st.session_state.clear()
-                st.rerun()
+        if st.button("🔄 Volver al Inicio"):
+            st.session_state.clear()
+            st.rerun()
 
 def avanzar(preguntas):
     if st.session_state.indice < len(preguntas) - 1:
         st.session_state.indice += 1
     else:
-        st.session_state.finalizado = True
+        st.session_state.pantalla = "resultados"
     st.rerun()
 
 if __name__ == "__main__":
