@@ -193,10 +193,71 @@ def main():
     st.set_page_config(page_title="Orientación ITESARC", page_icon="🏫", layout="centered")
     aplicar_estilos()
     
+    # --- 1. MEMORIA DE LA APP ---
     if 'pantalla' not in st.session_state:
         st.session_state.pantalla = "inicio"
+    if 'indice' not in st.session_state:
         st.session_state.indice = 0
+    if 'autenticado' not in st.session_state:
+        st.session_state.autenticado = False  # Este es el nuevo candado
+    if 'puntajes' not in st.session_state:
         st.session_state.puntajes = {k: 0 for k in ["Administrativo", "Social", "Arte", "Salud", "Tecnología", "Defensa", "Ciencia", "Lógico-matemática", "Lingüística", "Interpersonal", "Intrapersonal", "Espacial", "Musical", "Corporal"]}
+
+    # --- 2. LA PUERTA SECRETA (Sidebar) ---
+    with st.sidebar:
+        st.markdown("### 🔐 Acceso Docentes")
+        
+        # Si no está autenticado, pedimos contraseña
+        if not st.session_state.autenticado:
+            pwd = st.text_input("Contraseña:", type="password")
+            if pwd == "ITESARC2026":
+                st.session_state.autenticado = True
+                st.success("¡Contraseña correcta!")
+                st.rerun()
+            elif pwd != "":
+                st.error("Contraseña incorrecta")
+        
+        # Si ya está autenticado, mostramos el botón del panel siempre
+        if st.session_state.autenticado:
+            st.write("✅ Sesión Iniciada")
+            if st.button("📊 Ver Panel de Control"):
+                st.session_state.pantalla = "dashboard"
+                st.rerun()
+            
+            if st.button("🔴 Cerrar Sesión"):
+                st.session_state.autenticado = False
+                st.session_state.pantalla = "inicio"
+                st.rerun()
+
+    # --- 3. NAVEGACIÓN DE PANTALLAS ---
+    if st.session_state.pantalla == "inicio":
+        # ... (aquí va el código de tu pantalla de inicio que ya tienes)
+        st.markdown("<div class='titulo-colegio'>ITESARC</div>", unsafe_allow_html=True)
+        st.markdown("<div class='subtitulo'>Departamento de Psicoorientación | Test Vocacional</div>", unsafe_allow_html=True)
+        st.info("👋 **¡Hola!** Este test te ayudará a descubrir tus talentos ocultos basándose en el modelo CHASIDE.")
+        if st.button("🚀 COMENZAR TEST", type="primary"):
+            st.session_state.pantalla = "test"
+            st.rerun()
+
+    elif st.session_state.pantalla == "test":
+        # ... (aquí va tu código del test con las 98 preguntas)
+        pass # Reemplaza esto con tu código real del test
+
+    elif st.session_state.pantalla == "resultados":
+        # ... (aquí va tu código de resultados)
+        pass # Reemplaza esto con tu código real de resultados
+
+    elif st.session_state.pantalla == "dashboard":
+        # Esta pantalla ahora solo se cerrará si ella le da al botón de "Cerrar Sesión"
+        st.markdown("<h2 style='text-align: center;'>📊 Panel de Psicoorientación</h2>", unsafe_allow_html=True)
+        df = leer_excel()
+        if not df.empty:
+            st.metric("Total Alumnos", len(df))
+            st.bar_chart(df[df.columns[2]].value_counts())
+            st.dataframe(df)
+        if st.button("⬅️ Volver al Test"):
+            st.session_state.pantalla = "inicio"
+            st.rerun()
 # --- LA PUERTA SECRETA (Menú Lateral) ---
     with st.sidebar:
         st.markdown("### 🔐 Acceso Docentes")
