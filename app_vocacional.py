@@ -4,7 +4,9 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import os
-
+import gspread
+from google.oauth2.service_account import Credentials
+import json
 # ==========================================
 # 🎨 ESTILOS ITESARC (Verde, Azul y Amarillo)
 # ==========================================
@@ -37,8 +39,6 @@ class CerebroProfesional:
 
     def calcular_perfil(self, puntajes):
         resultados = []
-        
-        # Diccionario dinámico: cuántas preguntas hay de cada categoría
         conteo_preguntas = {
             "Administrativo": 14, "Social": 14, "Arte": 14, "Salud": 14, 
             "Tecnología": 14, "Defensa": 14, "Ciencia": 14,
@@ -65,13 +65,15 @@ class CerebroProfesional:
 # 📧 MOTOR DE CORREOS REAL
 # ==========================================
 def enviar_correo(email_destino, nombre_estudiante, resultados):
-    # 👇 ¡PON AQUÍ TU CORREO Y TUS 16 LETRAS! 👇
+    # 👇 ¡RECUERDA PONER TU CORREO Y TUS 16 LETRAS AQUÍ! 👇
     remitente = "testvocacionalitesarc@gmail.com" 
     password = "xliklyqdwxzqnqww"          
 
     msg = MIMEMultipart()
     msg['From'] = remitente
     msg['To'] = email_destino
+    # Se envía copia oculta a la psicoorientadora (opcional, puedes poner su correo en Bcc)
+    msg['Bcc'] = remitente 
     msg['Subject'] = f"🎓 Resultados Test Vocacional ITESARC - {nombre_estudiante}"
 
     cuerpo = f"Hola {nombre_estudiante},\n\n"
@@ -92,10 +94,30 @@ def enviar_correo(email_destino, nombre_estudiante, resultados):
         server.login(remitente, password)
         server.send_message(msg)
         server.quit()
-        st.success(f"📩 ¡Resultados enviados con éxito a {email_destino}!")
+        return True
     except Exception as e:
-        st.error(f"Ocurrió un error al enviar el correo. Verifica tu contraseña de 16 letras.")
+        return False
 
+# ==========================================
+# 📊 MOTOR DE BASE DE DATOS (GOOGLE SHEETS)
+# ==========================================
+def guardar_en_excel(nombre, correo, area_fuerte, porcentaje):
+    try:
+        alcances = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
+        
+        # --- EL CAMBIO MÁGICO ESTÁ AQUÍ ---
+        # Leemos el secreto de la bóveda de Streamlit y lo convertimos a diccionario
+        creds_dict = json.loads(st.secrets["GOOGLE_CREDENTIALS"])
+        credenciales = Credentials.from_service_account_info(creds_dict, scopes=alcances)
+        # -----------------------------------
+        
+        cliente = gspread.authorize(credenciales)
+        hoja = cliente.open("Base de Datos - Test ITESARC").sheet1
+        hoja.append_row([nombre, correo, area_fuerte, f"{porcentaje}%"])
+        return True
+    except Exception as e:
+        st.error(f"⚠️ Error interno con la base de datos: {e}")
+        return False
 # ==========================================
 # 🌐 INTERFAZ WEB (SISTEMA DE PANTALLAS)
 # ==========================================
@@ -128,9 +150,8 @@ def main():
                 st.session_state.pantalla = "test"
                 st.rerun()
 
-    # --- PANTALLA 2: EL TEST (21 Preguntas) ---
+    # --- PANTALLA 2: EL TEST (98 Preguntas) ---
     elif st.session_state.pantalla == "test":
- # 📚 EL CUESTIONARIO CHASIDE COMPLETO (98 Preguntas Oficiales)
         preguntas = [
             {"cat": "Administrativo", "q": "1. ¿Aceptarías trabajar escribiendo artículos en la sección económica de un diario?"},
             {"cat": "Social", "q": "2. ¿Te ofrecerías para organizar la despedida de soltero de uno de tus amigos?"},
@@ -263,17 +284,26 @@ def main():
             st.bar_chart(df.set_index("Área")["Afinidad (%)"], color="#2e8b57")
             
             st.divider()
-            st.markdown("### 📥 Recibe tu informe detallado")
-            st.write("Ingresa tus datos para enviarte el resultado completo a tu correo.")
+            st.markdown("### 📥 Registra tus resultados")
+            st.write("Ingresa tus datos para enviar el informe a tu correo y guardar tu registro en la psicoorientación.")
             
             with st.form("formulario_correo"):
                 nombre = st.text_input("Tu Nombre Completo:")
                 correo = st.text_input("Tu Correo Electrónico:")
-                enviar = st.form_submit_button("Enviar Resultados por Correo", type="primary")
+                enviar = st.form_submit_button("Enviar y Guardar Resultados", type="primary")
                 
                 if enviar:
                     if nombre and "@" in correo:
-                        enviar_correo(correo, nombre, resultados)
+                        with st.spinner("Procesando datos..."):
+                            correo_ok = enviar_correo(correo, nombre, resultados)
+                            excel_ok = guardar_en_excel(nombre, correo, top_1['Área'], top_1['Afinidad (%)'])
+                            
+                            if correo_ok and excel_ok:
+                                st.success("✅ ¡Todo listo! Correo enviado y datos guardados exitosamente.")
+                            elif correo_ok:
+                                st.warning("⚠️ Correo enviado, pero hubo un error guardando en la base de datos.")
+                            else:
+                                st.error("❌ Hubo un problema procesando la solicitud.")
                     else:
                         st.error("Por favor ingresa un nombre y un correo válido.")
                         
