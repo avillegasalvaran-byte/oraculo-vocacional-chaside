@@ -209,7 +209,7 @@ def main():
         
         # Si no está autenticado, pedimos contraseña
         if not st.session_state.autenticado:
-            pwd = st.text_input("Contraseña:", type="password", key="password_docente")
+            pwd = st.text_input("Contraseña:", type="password")
             if pwd == "ITESARC2026":
                 st.session_state.autenticado = True
                 st.success("¡Contraseña correcta!")
@@ -258,29 +258,6 @@ def main():
         if st.button("⬅️ Volver al Test"):
             st.session_state.pantalla = "inicio"
             st.rerun()
-# --- LA PUERTA SECRETA (Menú Lateral) ---
-    with st.sidebar:
-        st.markdown("### 🔐 Acceso Docentes")
-        password = st.text_input("Contraseña:", type="password")
-        
-        if password == "ITESARC2026": # <-- ¡Esta es la contraseña secreta!
-            if st.button("📊 Abrir Panel de Control"):
-                st.session_state.pantalla = "dashboard"
-                st.rerun()
-        elif password != "":
-            st.error("Contraseña incorrecta")
-# --- PANTALLA 1: BIENVENIDA ---
-    if st.session_state.pantalla == "inicio":
-        st.markdown("<div class='titulo-colegio'>ITESARC</div>", unsafe_allow_html=True)
-        st.markdown("<div class='subtitulo'>Departamento de Psicoorientación | Test Vocacional</div>", unsafe_allow_html=True)
-        st.info("👋 **¡Hola!** Este test te ayudará a descubrir tus talentos ocultos basándose en el modelo CHASIDE. No hay respuestas correctas ni incorrectas, solo sé honesto contigo mismo.")
-        
-        st.divider()
-        col1, col2, col3 = st.columns([1,2,1])
-        with col2:
-            if st.button("🚀 COMENZAR TEST", type="primary"):
-                st.session_state.pantalla = "test"
-                st.rerun()
     # --- PANTALLA 2: EL TEST (98 Preguntas) ---
     elif st.session_state.pantalla == "test":
         preguntas = [
