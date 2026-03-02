@@ -14,12 +14,43 @@ from datetime import datetime
 def aplicar_estilos():
     st.markdown("""
         <style>
+        /* Ocultar elementos por defecto de Streamlit */
         #MainMenu {visibility: hidden;} footer {visibility: hidden;} header {visibility: hidden;}
+        
+        /* Textos principales */
         .titulo-colegio { font-size: 45px; font-weight: 900; text-align: center; color: #004d99; margin-top: 10px;}
         .subtitulo { text-align: center; color: #2e8b57; font-size: 20px; margin-bottom: 30px; font-weight: bold; }
-        .tarjeta { background-color: #ffffff; padding: 30px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border-top: 6px solid #ffcc00; margin-bottom: 30px;}
-        .pregunta-titulo { font-size: 24px !important; font-weight: bold !important; text-align: center; color: #004d99; }
-        div.stButton > button { width: 100%; height: 60px; border-radius: 12px; font-size: 18px; font-weight: bold; transition: 0.3s; }
+        
+        /* 🪄 AQUÍ ESTÁ LA MAGIA: Tarjeta transparente y sin bordes molestos */
+        .tarjeta { 
+            background-color: transparent; /* Fondo transparente */
+            padding: 20px 0px; 
+            margin-bottom: 30px;
+            border-bottom: 3px solid #ffcc00; /* Solo una línea amarilla sutil abajo */
+        }
+        
+        /* Texto de la pregunta más grande e imponente */
+        .pregunta-titulo { 
+            font-size: 28px !important; 
+            font-weight: 900 !important; 
+            text-align: center; 
+            color: #004d99; 
+        }
+        
+        /* Botones redondeados y modernos */
+        div.stButton > button { 
+            width: 100%; 
+            height: 60px; 
+            border-radius: 15px; 
+            font-size: 18px; 
+            font-weight: bold; 
+            transition: 0.3s; 
+            border: 2px solid #004d99;
+        }
+        div.stButton > button:hover {
+            border-color: #2e8b57;
+            color: #2e8b57;
+        }
         </style>
     """, unsafe_allow_html=True)
 
