@@ -164,10 +164,9 @@ def leer_excel():
     try:
         alcances = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
         
+        # 🔑 Sistema de llaves inteligente (Nube o Local)
         if "GOOGLE_CREDENTIALS" in st.secrets and len(st.secrets["GOOGLE_CREDENTIALS"]) > 10:
-            import json
-            secreto_limpio = st.secrets["GOOGLE_CREDENTIALS"].strip()
-            creds_dict = json.loads(secreto_limpio)
+            creds_dict = json.loads(st.secrets["GOOGLE_CREDENTIALS"].strip())
             credenciales = Credentials.from_service_account_info(creds_dict, scopes=alcances)
         else:
             credenciales = Credentials.from_service_account_file('credenciales.json', scopes=alcances)
@@ -175,13 +174,12 @@ def leer_excel():
         cliente = gspread.authorize(credenciales)
         hoja = cliente.open("Base de Datos - Test ITESARC").sheet1
         
-        # Traer todos los datos y convertirlos en una tabla de Pandas
         datos = hoja.get_all_values()
         if len(datos) > 1:
+            # Convertimos a tabla de datos (DataFrame)
             df = pd.DataFrame(datos[1:], columns=datos[0])
             return df
-        else:
-            return pd.DataFrame() # Retorna tabla vacía si no hay alumnos
+        return pd.DataFrame()
             
     except Exception as e:
         st.error(f"⚠️ Error al leer la base de datos: {e}")
@@ -203,32 +201,32 @@ def main():
     if 'puntajes' not in st.session_state:
         st.session_state.puntajes = {k: 0 for k in ["Administrativo", "Social", "Arte", "Salud", "Tecnología", "Defensa", "Ciencia", "Lógico-matemática", "Lingüística", "Interpersonal", "Intrapersonal", "Espacial", "Musical", "Corporal"]}
 
-    # --- 2. LA PUERTA SECRETA (Sidebar) ---
+# --- DENTRO DEL MAIN(): LA PUERTA SECRETA (Sidebar) ---
     with st.sidebar:
         st.markdown("### 🔐 Acceso Docentes")
         
-        # Si no está autenticado, pedimos contraseña
+        # Verificamos si ya está logueado en la memoria de la app
+        if 'autenticado' not in st.session_state:
+            st.session_state.autenticado = False
+
         if not st.session_state.autenticado:
-            pwd = st.text_input("Contraseña:", type="password")
+            # Usamos una KEY única para evitar el error de ID duplicado
+            pwd = st.text_input("Contraseña:", type="password", key="login_admin_secret")
             if pwd == "ITESARC2026":
                 st.session_state.autenticado = True
-                st.success("¡Contraseña correcta!")
+                st.success("¡Acceso concedido!")
                 st.rerun()
-            elif pwd != "":
-                st.error("Contraseña incorrecta")
-        
-        # Si ya está autenticado, mostramos el botón del panel siempre
-        if st.session_state.autenticado:
+        else:
             st.write("✅ Sesión Iniciada")
-            if st.button("📊 Ver Panel de Control"):
+            # Botones con KEYS únicas
+            if st.button("📊 Abrir Panel de Control", key="btn_ir_dashboard"):
                 st.session_state.pantalla = "dashboard"
                 st.rerun()
             
-            if st.button("🔴 Cerrar Sesión"):
+            if st.button("🔴 Cerrar Sesión", key="btn_logout_docente"):
                 st.session_state.autenticado = False
                 st.session_state.pantalla = "inicio"
                 st.rerun()
-
     # --- 3. NAVEGACIÓN DE PANTALLAS ---
     if st.session_state.pantalla == "inicio":
         # ... (aquí va el código de tu pantalla de inicio que ya tienes)
