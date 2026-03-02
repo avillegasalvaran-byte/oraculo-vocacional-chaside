@@ -7,6 +7,7 @@ import os
 import gspread
 from google.oauth2.service_account import Credentials
 import json
+from datetime import datetime
 # ==========================================
 # 🎨 ESTILOS ITESARC (Verde, Azul y Amarillo)
 # ==========================================
@@ -105,16 +106,27 @@ def guardar_en_excel(nombre, correo, area_fuerte, porcentaje):
     try:
         alcances = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
         
-        # --- EL CAMBIO MÁGICO ESTÁ AQUÍ ---
-        # Leemos el secreto de la bóveda de Streamlit y lo convertimos a diccionario
-        creds_dict = json.loads(st.secrets["GOOGLE_CREDENTIALS"])
-        credenciales = Credentials.from_service_account_info(creds_dict, scopes=alcances)
-        # -----------------------------------
+        # 1. Intentamos buscar la llave en la bóveda secreta de Internet
+        if "GOOGLE_CREDENTIALS" in st.secrets:
+            secreto_limpio = st.secrets["GOOGLE_CREDENTIALS"].strip()
+            creds_dict = json.loads(secreto_limpio)
+            credenciales = Credentials.from_service_account_info(creds_dict, scopes=alcances)
+            
+        # 2. Si no hay bóveda, usamos el archivo local
+        else:
+            credenciales = Credentials.from_service_account_file('credenciales.json', scopes=alcances)
         
+        # 3. Conectar al Excel
         cliente = gspread.authorize(credenciales)
         hoja = cliente.open("Base de Datos - Test ITESARC").sheet1
-        hoja.append_row([nombre, correo, area_fuerte, f"{porcentaje}%"])
+        
+        # --- NUEVO: Capturar la fecha y hora exacta ---
+        fecha_actual = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+        
+        # 4. Escribir la nueva fila con los 5 datos
+        hoja.append_row([nombre, correo, area_fuerte, f"{porcentaje}%", fecha_actual])
         return True
+        
     except Exception as e:
         st.error(f"⚠️ Error interno con la base de datos: {e}")
         return False
@@ -269,7 +281,7 @@ def main():
             if st.button("Nah, paso 🙅‍♂️", key=f"n_{st.session_state.indice}"):
                 avanzar(preguntas)
 
-    # --- PANTALLA 3: RESULTADOS ---
+   # --- PANTALLA 3: RESULTADOS ---
     elif st.session_state.pantalla == "resultados":
         st.balloons()
         st.markdown("<h2 style='text-align: center; color: #004d99;'>¡Análisis Completado! 🎉</h2>", unsafe_allow_html=True)
@@ -284,29 +296,53 @@ def main():
             st.bar_chart(df.set_index("Área")["Afinidad (%)"], color="#2e8b57")
             
             st.divider()
-            st.markdown("### 📥 Registra tus resultados")
-            st.write("Ingresa tus datos para enviar el informe a tu correo y guardar tu registro en la psicoorientación.")
+            st.markdown("### 📥 Registro de Resultados")
             
-            with st.form("formulario_correo"):
-                nombre = st.text_input("Tu Nombre Completo:")
-                correo = st.text_input("Tu Correo Electrónico:")
-                enviar = st.form_submit_button("Enviar y Guardar Resultados", type="primary")
-                
-                if enviar:
-                    if nombre and "@" in correo:
-                        with st.spinner("Procesando datos..."):
-                            correo_ok = enviar_correo(correo, nombre, resultados)
-                            excel_ok = guardar_en_excel(nombre, correo, top_1['Área'], top_1['Afinidad (%)'])
+            # --- LA NUEVA FUNCIÓN DE FILTRO ---
+            tipo_usuario = st.radio(
+                "¿Eres estudiante activo del ITESARC?", 
+                ("Selecciona una opción...", "Sí, soy estudiante", "No, solo soy un visitante")
+            )
+            
+            # RUTA 1: EL ESTUDIANTE (Guarda en Excel y envía correo)
+            if tipo_usuario == "Sí, soy estudiante":
+                st.info("Tus resultados se guardarán en la base de datos de la psicoorientadora.")
+                with st.form("formulario_estudiante"):
+                    nombre = st.text_input("Tu Nombre Completo:")
+                    correo = st.text_input("Tu Correo Electrónico:")
+                    enviar = st.form_submit_button("Guardar y Enviar a mi Correo", type="primary")
+                    
+                    if enviar:
+                        if nombre and "@" in correo:
+                            with st.spinner("Procesando datos institucionales..."):
+                                correo_ok = enviar_correo(correo, nombre, resultados)
+                                excel_ok = guardar_en_excel(nombre, correo, top_1['Área'], top_1['Afinidad (%)'])
+                                
+                                if correo_ok and excel_ok:
+                                    st.success("✅ ¡Todo listo! Datos guardados en el colegio y enviados a tu correo.")
+                                else:
+                                    st.error("❌ Hubo un problema. Verifica la conexión.")
+                        else:
+                            st.error("Por favor ingresa un nombre y un correo válido.")
                             
-                            if correo_ok and excel_ok:
-                                st.success("✅ ¡Todo listo! Correo enviado y datos guardados exitosamente.")
-                            elif correo_ok:
-                                st.warning("⚠️ Correo enviado, pero hubo un error guardando en la base de datos.")
-                            else:
-                                st.error("❌ Hubo un problema procesando la solicitud.")
-                    else:
-                        st.error("Por favor ingresa un nombre y un correo válido.")
-                        
+            # RUTA 2: EL VISITANTE (SOLO envía correo, no toca el Excel)
+            elif tipo_usuario == "No, solo soy un visitante":
+                st.write("¡Gracias por hacer el test de forma libre! Si deseas una copia en tu correo personal (tus datos no se guardarán en el colegio), llena esto:")
+                with st.form("formulario_visitante"):
+                    nombre_vis = st.text_input("Tu Nombre:")
+                    correo_vis = st.text_input("Tu Correo Electrónico:")
+                    enviar_vis = st.form_submit_button("Solo enviarme mis resultados", type="primary")
+                    
+                    if enviar_vis:
+                        if nombre_vis and "@" in correo_vis:
+                            with st.spinner("Enviando correo personal..."):
+                                # Fíjate que aquí NO llamamos a la función guardar_en_excel
+                                correo_ok = enviar_correo(correo_vis, nombre_vis, resultados)
+                                if correo_ok:
+                                    st.success("📩 ¡Resultados enviados a tu correo personal con éxito!")
+                        else:
+                            st.error("Por favor ingresa un nombre y un correo válido.")
+                            
         st.divider()
         if st.button("🔄 Volver al Inicio"):
             st.session_state.clear()
