@@ -209,7 +209,7 @@ def main():
         
         # Si no está autenticado, pedimos contraseña
         if not st.session_state.autenticado:
-            pwd = st.text_input("Contraseña:", type="password")
+            pwd = st.text_input("Contraseña:", type="password", key="password_docente")
             if pwd == "ITESARC2026":
                 st.session_state.autenticado = True
                 st.success("¡Contraseña correcta!")
