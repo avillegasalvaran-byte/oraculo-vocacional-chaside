@@ -197,65 +197,42 @@ def main():
     if 'indice' not in st.session_state:
         st.session_state.indice = 0
     if 'autenticado' not in st.session_state:
-        st.session_state.autenticado = False  # Este es el nuevo candado
+        st.session_state.autenticado = False
     if 'puntajes' not in st.session_state:
         st.session_state.puntajes = {k: 0 for k in ["Administrativo", "Social", "Arte", "Salud", "Tecnología", "Defensa", "Ciencia", "Lógico-matemática", "Lingüística", "Interpersonal", "Intrapersonal", "Espacial", "Musical", "Corporal"]}
 
-# --- DENTRO DEL MAIN(): LA PUERTA SECRETA (Sidebar) ---
+    # --- 2. BARRA LATERAL (SIDEBAR) ---
     with st.sidebar:
         st.markdown("### 🔐 Acceso Docentes")
-        
-        # Verificamos si ya está logueado en la memoria de la app
-        if 'autenticado' not in st.session_state:
-            st.session_state.autenticado = False
-
         if not st.session_state.autenticado:
-            # Usamos una KEY única para evitar el error de ID duplicado
             pwd = st.text_input("Contraseña:", type="password", key="login_admin_secret")
             if pwd == "ITESARC2026":
                 st.session_state.autenticado = True
-                st.success("¡Acceso concedido!")
                 st.rerun()
         else:
             st.write("✅ Sesión Iniciada")
-            # Botones con KEYS únicas
             if st.button("📊 Abrir Panel de Control", key="btn_ir_dashboard"):
                 st.session_state.pantalla = "dashboard"
                 st.rerun()
-            
             if st.button("🔴 Cerrar Sesión", key="btn_logout_docente"):
                 st.session_state.autenticado = False
                 st.session_state.pantalla = "inicio"
                 st.rerun()
-    # --- 3. NAVEGACIÓN DE PANTALLAS ---
+
+    # --- 3. NAVEGACIÓN DE PANTALLAS (ORDENADA) ---
+    
+    # --- PANTALLA 1: INICIO ---
     if st.session_state.pantalla == "inicio":
-        # ... (aquí va el código de tu pantalla de inicio que ya tienes)
         st.markdown("<div class='titulo-colegio'>ITESARC</div>", unsafe_allow_html=True)
         st.markdown("<div class='subtitulo'>Departamento de Psicoorientación | Test Vocacional</div>", unsafe_allow_html=True)
         st.info("👋 **¡Hola!** Este test te ayudará a descubrir tus talentos ocultos basándose en el modelo CHASIDE.")
-    if st.button("🚀 COMENZAR TEST", type="primary", key="btn_inicio_principal"):
+        
+        # EL BOTÓN AHORA ESTÁ DENTRO DEL IF (CORREGIDO)
+        if st.button("🚀 COMENZAR TEST", type="primary", key="btn_inicio_principal"):
             st.session_state.pantalla = "test"
+            st.session_state.indice = 0
             st.rerun()
 
-    elif st.session_state.pantalla == "test":
-        # ... (aquí va tu código del test con las 98 preguntas)
-        pass # Reemplaza esto con tu código real del test
-
-    elif st.session_state.pantalla == "resultados":
-        # ... (aquí va tu código de resultados)
-        pass # Reemplaza esto con tu código real de resultados
-
-    elif st.session_state.pantalla == "dashboard":
-        # Esta pantalla ahora solo se cerrará si ella le da al botón de "Cerrar Sesión"
-        st.markdown("<h2 style='text-align: center;'>📊 Panel de Psicoorientación</h2>", unsafe_allow_html=True)
-        df = leer_excel()
-        if not df.empty:
-            st.metric("Total Alumnos", len(df))
-            st.bar_chart(df[df.columns[2]].value_counts())
-            st.dataframe(df)
-        if st.button("⬅️ Volver al Test"):
-            st.session_state.pantalla = "inicio"
-            st.rerun()
     # --- PANTALLA 2: EL TEST (98 Preguntas) ---
     elif st.session_state.pantalla == "test":
         preguntas = [
@@ -344,7 +321,7 @@ def main():
             {"cat": "Social", "q": "83. ¿Participas activamente en debates sobre problemas sociales actuales?"},
             {"cat": "Defensa", "q": "84. ¿Te atrae trabajar en la aduana o en el control de fronteras?"},
             {"cat": "Salud", "q": "85. ¿Te gustaría trabajar con personas de la tercera edad para mejorar su calidad de vida?"},
-            {"cat": "Administrativo", "q": "86. ¿Te sientes capaz de evaluar el rendimiento laboral de otras personas?"},
+            {"cat": "Administrativo", "q": "86. ¿Te siente capaz de evaluar el rendimiento laboral de otras personas?"},
             {"cat": "Arte", "q": "87. ¿Te gustaría trabajar en la producción de un programa de radio o televisión?"},
             {"cat": "Tecnología", "q": "88. ¿Te atrae la mecánica automotriz o la aviación comercial?"},
             {"cat": "Ciencia", "q": "89. ¿Te gustaría trabajar en un laboratorio farmacéutico analizando compuestos químicos?"},
@@ -375,7 +352,7 @@ def main():
             if st.button("Nah, paso 🙅‍♂️", key=f"n_{st.session_state.indice}"):
                 avanzar(preguntas)
 
-   # --- PANTALLA 3: RESULTADOS ---
+    # --- PANTALLA 3: RESULTADOS ---
     elif st.session_state.pantalla == "resultados":
         st.balloons()
         st.markdown("<h2 style='text-align: center; color: #004d99;'>¡Análisis Completado! 🎉</h2>", unsafe_allow_html=True)
@@ -392,13 +369,12 @@ def main():
             st.divider()
             st.markdown("### 📥 Registro de Resultados")
             
-            # --- LA NUEVA FUNCIÓN DE FILTRO ---
             tipo_usuario = st.radio(
                 "¿Eres estudiante activo del ITESARC?", 
-                ("Selecciona una opción...", "Sí, soy estudiante", "No, solo soy un visitante")
+                ("Selecciona una opción...", "Sí, soy estudiante", "No, solo soy un visitante"),
+                key="tipo_usuario_radio"
             )
             
-            # RUTA 1: EL ESTUDIANTE (Guarda en Excel y envía correo)
             if tipo_usuario == "Sí, soy estudiante":
                 st.info("Tus resultados se guardarán en la base de datos de la psicoorientadora.")
                 with st.form("formulario_estudiante"):
@@ -411,35 +387,36 @@ def main():
                             with st.spinner("Procesando datos institucionales..."):
                                 correo_ok = enviar_correo(correo, nombre, resultados)
                                 excel_ok = guardar_en_excel(nombre, correo, top_1['Área'], top_1['Afinidad (%)'])
-                                
                                 if correo_ok and excel_ok:
-                                    st.success("✅ ¡Todo listo! Datos guardados en el colegio y enviados a tu correo.")
-                                else:
-                                    st.error("❌ Hubo un problema. Verifica la conexión.")
+                                    st.success("✅ ¡Todo listo! Datos guardados y enviados.")
                         else:
                             st.error("Por favor ingresa un nombre y un correo válido.")
                             
-            # RUTA 2: EL VISITANTE (SOLO envía correo, no toca el Excel)
             elif tipo_usuario == "No, solo soy un visitante":
-                st.write("¡Gracias por hacer el test de forma libre! Si deseas una copia en tu correo personal (tus datos no se guardarán en el colegio), llena esto:")
                 with st.form("formulario_visitante"):
                     nombre_vis = st.text_input("Tu Nombre:")
-                    correo_vis = st.text_input("Tu Correo Electrónico:")
+                    correo_vis = st.text_input("Tu Correo:")
                     enviar_vis = st.form_submit_button("Solo enviarme mis resultados", type="primary")
-                    
                     if enviar_vis:
                         if nombre_vis and "@" in correo_vis:
-                            with st.spinner("Enviando correo personal..."):
-                                # Fíjate que aquí NO llamamos a la función guardar_en_excel
-                                correo_ok = enviar_correo(correo_vis, nombre_vis, resultados)
-                                if correo_ok:
-                                    st.success("📩 ¡Resultados enviados a tu correo personal con éxito!")
-                        else:
-                            st.error("Por favor ingresa un nombre y un correo válido.")
-                            
+                            enviar_correo(correo_vis, nombre_vis, resultados)
+                            st.success("📩 ¡Enviado!")
+
         st.divider()
-        if st.button("🔄 Volver al Inicio"):
+        if st.button("🔄 Volver al Inicio", key="btn_reset"):
             st.session_state.clear()
+            st.rerun()
+
+    # --- PANTALLA 4: DASHBOARD ---
+    elif st.session_state.pantalla == "dashboard":
+        st.markdown("<h2 style='text-align: center; color: #004d99;'>📊 Panel de Psicoorientación ITESARC</h2>", unsafe_allow_html=True)
+        df = leer_excel()
+        if not df.empty:
+            st.metric(label="Total de Estudiantes", value=len(df))
+            st.bar_chart(df[df.columns[2]].value_counts(), color="#ffcc00")
+            st.dataframe(df, use_container_width=True)
+        if st.button("🚪 Cerrar Sesión y Volver", key="btn_exit_dash"):
+            st.session_state.pantalla = "inicio"
             st.rerun()
 # --- PANTALLA 4: EL PORTAL SECRETO (Dashboard) ---
     elif st.session_state.pantalla == "dashboard":
