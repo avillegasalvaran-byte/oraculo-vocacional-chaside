@@ -131,36 +131,61 @@ def enviar_correo(email_destino, nombre_estudiante, resultados):
         return False
 
 # ==========================================
-# 📊 MOTOR DE BASE DE DATOS (GOOGLE SHEETS)
+# 📊 MOTOR DE BASE DE DATOS (ESCRITURA)
 # ==========================================
 def guardar_en_excel(nombre, correo, area_fuerte, porcentaje):
     try:
         alcances = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
         
-        # 1. Intentamos buscar la llave en la bóveda secreta de Internet
-        if "GOOGLE_CREDENTIALS" in st.secrets:
+        if "GOOGLE_CREDENTIALS" in st.secrets and len(st.secrets["GOOGLE_CREDENTIALS"]) > 10:
+            import json
             secreto_limpio = st.secrets["GOOGLE_CREDENTIALS"].strip()
             creds_dict = json.loads(secreto_limpio)
             credenciales = Credentials.from_service_account_info(creds_dict, scopes=alcances)
-            
-        # 2. Si no hay bóveda, usamos el archivo local
         else:
             credenciales = Credentials.from_service_account_file('credenciales.json', scopes=alcances)
         
-        # 3. Conectar al Excel
         cliente = gspread.authorize(credenciales)
         hoja = cliente.open("Base de Datos - Test ITESARC").sheet1
         
-        # --- NUEVO: Capturar la fecha y hora exacta ---
+        from datetime import datetime
         fecha_actual = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-        
-        # 4. Escribir la nueva fila con los 5 datos
         hoja.append_row([nombre, correo, area_fuerte, f"{porcentaje}%", fecha_actual])
         return True
         
     except Exception as e:
         st.error(f"⚠️ Error interno con la base de datos: {e}")
         return False
+
+# ==========================================
+# 📈 MOTOR DE LECTURA (PARA EL DASHBOARD)
+# ==========================================
+def leer_excel():
+    try:
+        alcances = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
+        
+        if "GOOGLE_CREDENTIALS" in st.secrets and len(st.secrets["GOOGLE_CREDENTIALS"]) > 10:
+            import json
+            secreto_limpio = st.secrets["GOOGLE_CREDENTIALS"].strip()
+            creds_dict = json.loads(secreto_limpio)
+            credenciales = Credentials.from_service_account_info(creds_dict, scopes=alcances)
+        else:
+            credenciales = Credentials.from_service_account_file('credenciales.json', scopes=alcances)
+            
+        cliente = gspread.authorize(credenciales)
+        hoja = cliente.open("Base de Datos - Test ITESARC").sheet1
+        
+        # Traer todos los datos y convertirlos en una tabla de Pandas
+        datos = hoja.get_all_values()
+        if len(datos) > 1:
+            df = pd.DataFrame(datos[1:], columns=datos[0])
+            return df
+        else:
+            return pd.DataFrame() # Retorna tabla vacía si no hay alumnos
+            
+    except Exception as e:
+        st.error(f"⚠️ Error al leer la base de datos: {e}")
+        return pd.DataFrame()
 # ==========================================
 # 🌐 INTERFAZ WEB (SISTEMA DE PANTALLAS)
 # ==========================================
@@ -172,7 +197,17 @@ def main():
         st.session_state.pantalla = "inicio"
         st.session_state.indice = 0
         st.session_state.puntajes = {k: 0 for k in ["Administrativo", "Social", "Arte", "Salud", "Tecnología", "Defensa", "Ciencia", "Lógico-matemática", "Lingüística", "Interpersonal", "Intrapersonal", "Espacial", "Musical", "Corporal"]}
-
+# --- LA PUERTA SECRETA (Menú Lateral) ---
+    with st.sidebar:
+        st.markdown("### 🔐 Acceso Docentes")
+        password = st.text_input("Contraseña:", type="password")
+        
+        if password == "ITESARC2026": # <-- ¡Esta es la contraseña secreta!
+            if st.button("📊 Abrir Panel de Control"):
+                st.session_state.pantalla = "dashboard"
+                st.rerun()
+        elif password != "":
+            st.error("Contraseña incorrecta")
 # --- PANTALLA 1: BIENVENIDA ---
     if st.session_state.pantalla == "inicio":
         st.markdown("<div class='titulo-colegio'>ITESARC</div>", unsafe_allow_html=True)
@@ -370,7 +405,38 @@ def main():
         if st.button("🔄 Volver al Inicio"):
             st.session_state.clear()
             st.rerun()
-
+# --- PANTALLA 4: EL PORTAL SECRETO (Dashboard) ---
+    elif st.session_state.pantalla == "dashboard":
+        st.markdown("<h2 style='text-align: center; color: #004d99;'>📊 Panel de Psicoorientación ITESARC</h2>", unsafe_allow_html=True)
+        st.divider()
+        
+        with st.spinner("Cargando datos en vivo desde Google Sheets..."):
+            df = leer_excel()
+            
+        if df.empty:
+            st.warning("Aún no hay datos registrados de los estudiantes.")
+        else:
+            # 1. Tarjeta de total de alumnos
+            total_alumnos = len(df)
+            st.metric(label="Total de Estudiantes Evaluados", value=total_alumnos)
+            
+            # 2. Gráfica de Áreas Fuertes
+            st.markdown("### 🎯 Tendencia Vocacional del Colegio")
+            # Asumimos que la columna 3 (índice 2) es donde guardaste el Área Fuerte. 
+            # Si se llama diferente, Pandas la leerá por su posición.
+            columna_area = df.columns[2] 
+            conteo_areas = df[columna_area].value_counts()
+            
+            st.bar_chart(conteo_areas, color="#ffcc00")
+            
+            # 3. La tabla completa
+            st.markdown("### 📋 Registro Completo")
+            st.dataframe(df, use_container_width=True)
+            
+        st.divider()
+        if st.button("🚪 Cerrar Sesión y Volver al Test"):
+            st.session_state.pantalla = "inicio"
+            st.rerun()
 def avanzar(preguntas):
     if st.session_state.indice < len(preguntas) - 1:
         st.session_state.indice += 1
