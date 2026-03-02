@@ -407,49 +407,7 @@ def main():
             st.session_state.clear()
             st.rerun()
 
-    # --- PANTALLA 4: DASHBOARD ---
-    elif st.session_state.pantalla == "dashboard":
-        st.markdown("<h2 style='text-align: center; color: #004d99;'>📊 Panel de Psicoorientación ITESARC</h2>", unsafe_allow_html=True)
-        df = leer_excel()
-        if not df.empty:
-            st.metric(label="Total de Estudiantes", value=len(df))
-            st.bar_chart(df[df.columns[2]].value_counts(), color="#ffcc00")
-            st.dataframe(df, use_container_width=True)
-        if st.button("🚪 Cerrar Sesión y Volver", key="btn_exit_dash"):
-            st.session_state.pantalla = "inicio"
-            st.rerun()
-# --- PANTALLA 4: EL PORTAL SECRETO (Dashboard) ---
-    elif st.session_state.pantalla == "dashboard":
-        st.markdown("<h2 style='text-align: center; color: #004d99;'>📊 Panel de Psicoorientación ITESARC</h2>", unsafe_allow_html=True)
-        st.divider()
-        
-        with st.spinner("Cargando datos en vivo desde Google Sheets..."):
-            df = leer_excel()
-            
-        if df.empty:
-            st.warning("Aún no hay datos registrados de los estudiantes.")
-        else:
-            # 1. Tarjeta de total de alumnos
-            total_alumnos = len(df)
-            st.metric(label="Total de Estudiantes Evaluados", value=total_alumnos)
-            
-            # 2. Gráfica de Áreas Fuertes
-            st.markdown("### 🎯 Tendencia Vocacional del Colegio")
-            # Asumimos que la columna 3 (índice 2) es donde guardaste el Área Fuerte. 
-            # Si se llama diferente, Pandas la leerá por su posición.
-            columna_area = df.columns[2] 
-            conteo_areas = df[columna_area].value_counts()
-            
-            st.bar_chart(conteo_areas, color="#ffcc00")
-            
-            # 3. La tabla completa
-            st.markdown("### 📋 Registro Completo")
-            st.dataframe(df, use_container_width=True)
-            
-        st.divider()
-        if st.button("🚪 Cerrar Sesión y Volver al Test"):
-            st.session_state.pantalla = "inicio"
-            st.rerun()
+  
 def avanzar(preguntas):
     if st.session_state.indice < len(preguntas) - 1:
         st.session_state.indice += 1
