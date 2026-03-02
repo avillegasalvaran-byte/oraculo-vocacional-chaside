@@ -173,15 +173,8 @@ def main():
         st.session_state.indice = 0
         st.session_state.puntajes = {k: 0 for k in ["Administrativo", "Social", "Arte", "Salud", "Tecnología", "Defensa", "Ciencia", "Lógico-matemática", "Lingüística", "Interpersonal", "Intrapersonal", "Espacial", "Musical", "Corporal"]}
 
-    # --- PANTALLA 1: BIENVENIDA ---
+# --- PANTALLA 1: BIENVENIDA ---
     if st.session_state.pantalla == "inicio":
-        col_img1, col_img2, col_img3 = st.columns([1, 2, 1])
-        with col_img2:
-            if os.path.exists("logo.png"):
-                st.image("logo.png", use_container_width=True)
-            elif os.path.exists("logo.jpg"):
-                st.image("logo.jpg", use_container_width=True)
-                
         st.markdown("<div class='titulo-colegio'>ITESARC</div>", unsafe_allow_html=True)
         st.markdown("<div class='subtitulo'>Departamento de Psicoorientación | Test Vocacional</div>", unsafe_allow_html=True)
         st.info("👋 **¡Hola!** Este test te ayudará a descubrir tus talentos ocultos basándose en el modelo CHASIDE. No hay respuestas correctas ni incorrectas, solo sé honesto contigo mismo.")
@@ -192,7 +185,6 @@ def main():
             if st.button("🚀 COMENZAR TEST", type="primary"):
                 st.session_state.pantalla = "test"
                 st.rerun()
-
     # --- PANTALLA 2: EL TEST (98 Preguntas) ---
     elif st.session_state.pantalla == "test":
         preguntas = [
