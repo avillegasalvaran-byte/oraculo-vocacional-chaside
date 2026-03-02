@@ -235,7 +235,7 @@ def main():
         st.markdown("<div class='titulo-colegio'>ITESARC</div>", unsafe_allow_html=True)
         st.markdown("<div class='subtitulo'>Departamento de Psicoorientación | Test Vocacional</div>", unsafe_allow_html=True)
         st.info("👋 **¡Hola!** Este test te ayudará a descubrir tus talentos ocultos basándose en el modelo CHASIDE.")
-        if st.button("🚀 COMENZAR TEST", type="primary"):
+        if st.button("🚀 COMENZAR TEST", type="primary", key="btn_inicio_principal"):
             st.session_state.pantalla = "test"
             st.rerun()
 
