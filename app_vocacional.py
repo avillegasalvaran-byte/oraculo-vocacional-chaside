@@ -150,7 +150,7 @@ def guardar_en_excel(nombre, correo, area_fuerte, porcentaje):
         
         from datetime import datetime
         fecha_actual = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-        hoja.append_row([nombre, correo, area_fuerte, f"{porcentaje}%", fecha_actual])
+        hoja.append_row([nombre, correo, area_fuerte, porcentaje, fecha_actual])
         return True
         
     except Exception as e:
