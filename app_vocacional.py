@@ -165,10 +165,11 @@ def guardar_en_excel(nombre, correo, area_fuerte, porcentaje, resultados):
         
         fecha_actual = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
         
-        # Magia: Extraemos los porcentajes de todas las áreas
+# 1. Primero, sacamos todos los porcentajes de la variable 'resultados'
         porcentajes = {r['Área']: r['Afinidad (%)'] for r in resultados}
         
-        # Sacamos cada valor (si por algún error no está, pone 0)
+        # 2. Llenamos las "cajitas" (letras) con el número exacto de cada área. 
+        # Si por algún error un área no tiene puntaje, le ponemos un 0 para que el Excel no se descuadre.
         c = porcentajes.get("C - Administrativas", 0)
         h = porcentajes.get("H - Humanísticas", 0)
         a = porcentajes.get("A - Artísticas", 0)
@@ -177,7 +178,8 @@ def guardar_en_excel(nombre, correo, area_fuerte, porcentaje, resultados):
         d = porcentajes.get("D - Defensa", 0)
         e = porcentajes.get("E - Ciencias Exactas", 0)
         
-        # Ahora enviamos toda la fila larga al Excel
+        # 3. AHORA SÍ, el robot manda la fila completa.
+        # Como las letras ya tienen los números guardados, el robot pegará: Nombre, Correo, Area, 85, Fecha, 70, 40, 90...
         hoja.append_row([nombre, correo, area_fuerte, porcentaje, fecha_actual, c, h, a, s, i, d, e])
         return True
         
