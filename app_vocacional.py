@@ -133,14 +133,11 @@ def enviar_correo(email_destino, nombre_estudiante, resultados):
 # ==========================================
 # 📊 MOTOR DE BASE DE DATOS (ESCRITURA)
 # ==========================================
-def guardar_en_excel(nombre, correo, area_fuerte, porcentaje):
+def guardar_en_excel(nombre, correo, area_fuerte, porcentaje, resultados):
     try:
         alcances = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
-        
         if "GOOGLE_CREDENTIALS" in st.secrets and len(st.secrets["GOOGLE_CREDENTIALS"]) > 10:
-            import json
-            secreto_limpio = st.secrets["GOOGLE_CREDENTIALS"].strip()
-            creds_dict = json.loads(secreto_limpio)
+            creds_dict = json.loads(st.secrets["GOOGLE_CREDENTIALS"].strip())
             credenciales = Credentials.from_service_account_info(creds_dict, scopes=alcances)
         else:
             credenciales = Credentials.from_service_account_file('credenciales.json', scopes=alcances)
@@ -148,9 +145,22 @@ def guardar_en_excel(nombre, correo, area_fuerte, porcentaje):
         cliente = gspread.authorize(credenciales)
         hoja = cliente.open("Base de Datos - Test ITESARC").sheet1
         
-        from datetime import datetime
         fecha_actual = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-        hoja.append_row([nombre, correo, area_fuerte, porcentaje, fecha_actual])
+        
+        # Magia: Extraemos los porcentajes de todas las áreas
+        porcentajes = {r['Área']: r['Afinidad (%)'] for r in resultados}
+        
+        # Sacamos cada valor (si por algún error no está, pone 0)
+        c = porcentajes.get("C - Administrativas", 0)
+        h = porcentajes.get("H - Humanísticas", 0)
+        a = porcentajes.get("A - Artísticas", 0)
+        s = porcentajes.get("S - Salud", 0)
+        i = porcentajes.get("I - Ingeniería", 0)
+        d = porcentajes.get("D - Defensa", 0)
+        e = porcentajes.get("E - Ciencias Exactas", 0)
+        
+        # Ahora enviamos toda la fila larga al Excel
+        hoja.append_row([nombre, correo, area_fuerte, porcentaje, fecha_actual, c, h, a, s, i, d, e])
         return True
         
     except Exception as e:
@@ -386,7 +396,7 @@ def main():
                         if nombre and "@" in correo:
                             with st.spinner("Procesando datos institucionales..."):
                                 correo_ok = enviar_correo(correo, nombre, resultados)
-                                excel_ok = guardar_en_excel(nombre, correo, top_1['Área'], top_1['Afinidad (%)'])
+                                excel_ok = guardar_en_excel(nombre, correo, top_1['Área'], top_1['Afinidad (%)'], resultados)
                                 if correo_ok and excel_ok:
                                     st.success("✅ ¡Todo listo! Datos guardados y enviados.")
                         else:
