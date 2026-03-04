@@ -94,7 +94,7 @@ class CerebroProfesional:
         return resultados
 
 # ==========================================
-# 📧 MOTOR DE CORREOS REAL
+# 📧 MOTOR DE CORREOS REAL (CON CARRERAS)
 # ==========================================
 def enviar_correo(email_destino, nombre_estudiante, resultados):
     # 👇 ¡RECUERDA PONER TU CORREO Y TUS 16 LETRAS AQUÍ! 👇
@@ -104,18 +104,37 @@ def enviar_correo(email_destino, nombre_estudiante, resultados):
     msg = MIMEMultipart()
     msg['From'] = remitente
     msg['To'] = email_destino
-    # Se envía copia oculta a la psicoorientadora (opcional, puedes poner su correo en Bcc)
-    msg['Bcc'] = remitente 
     msg['Subject'] = f"🎓 Resultados Test Vocacional ITESARC - {nombre_estudiante}"
 
+    # 🎯 NUEVO: Catálogo de Carreras CHASIDE
+    carreras_recomendadas = {
+        "C - Administrativas": "Administración de Empresas, Economía, Contaduría Pública, Negocios Internacionales, Marketing, Recursos Humanos.",
+        "H - Humanísticas": "Psicología, Derecho, Comunicación Social, Trabajo Social, Sociología, Filosofía, Licenciaturas/Docencia.",
+        "A - Artísticas": "Diseño Gráfico, Arquitectura, Artes Plásticas, Diseño de Modas, Producción Audiovisual, Música, Animación 3D.",
+        "S - Salud": "Medicina, Enfermería, Odontología, Fisioterapia, Nutrición, Veterinaria, Bacteriología.",
+        "I - Ingeniería": "Ingeniería de Sistemas, Ingeniería Civil, Ingeniería Industrial, Mecatrónica, Desarrollo de Software, Arquitectura.",
+        "D - Defensa": "Ciencias Militares, Ciencias Policiales, Criminalística, Criminología, Derecho Penal, Gestión del Riesgo.",
+        "E - Ciencias Exactas": "Biología, Química, Matemáticas, Ingeniería Ambiental, Biotecnología, Física, Ingeniería Agronómica."
+    }
+
+    # Identificamos el área ganadora (la número 1)
+    area_ganadora = resultados[0]['Área']
+    
+    # Buscamos las carreras para esa área (si no la encuentra por algún error, pone un texto genérico)
+    carreras = carreras_recomendadas.get(area_ganadora, "Múltiples carreras universitarias y técnicas afines.")
+
+    # 📝 Construcción del mensaje
     cuerpo = f"Hola {nombre_estudiante},\n\n"
     cuerpo += "¡Felicidades por completar tu proceso de orientación vocacional en el ITESARC!\n\n"
-    cuerpo += "Tus resultados de afinidad son:\n"
+    cuerpo += "📊 Tus resultados de afinidad son:\n"
+    
     for res in resultados:
         cuerpo += f"- {res['Área']}: {res['Afinidad (%)']}%\n"
     
-    cuerpo += f"\nTu área principal recomendada es: {resultados[0]['Área']}\n"
-    cuerpo += "\nEste es un primer paso en tu proyecto de vida. ¡Muchos éxitos!\n"
+    cuerpo += f"\n🏆 Tu área principal recomendada es: {area_ganadora}\n"
+    cuerpo += f"\n🎓 POSIBLES CARRERAS Y PROFESIONES PARA TI:\n"
+    cuerpo += f"> {carreras}\n"
+    cuerpo += "\nRecuerda que este es un primer paso en tu proyecto de vida. ¡Muchos éxitos en tu futuro profesional!\n"
     cuerpo += "Departamento de Psicoorientación - ITESARC"
     
     msg.attach(MIMEText(cuerpo, 'plain'))
@@ -129,7 +148,6 @@ def enviar_correo(email_destino, nombre_estudiante, resultados):
         return True
     except Exception as e:
         return False
-
 # ==========================================
 # 📊 MOTOR DE BASE DE DATOS (ESCRITURA)
 # ==========================================
